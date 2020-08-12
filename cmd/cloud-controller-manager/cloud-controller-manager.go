@@ -27,7 +27,7 @@ import (
 	"k8s.io/component-base/logs"
 	"k8s.io/kubernetes/cmd/cloud-controller-manager/app"
 
-	_ "sigs.k8s.io/cloud-provider-opentelekomcloud/pkg/cloudprovider/opentelekomcloud"
+	_ "opentelekomcloud/cloud-provider-opentelekomcloud/pkg/cloudprovider/opentelekomcloud"
 )
 
 func main() {

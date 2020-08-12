@@ -29,9 +29,10 @@ import (
 	"strings"
 	"time"
 
+	"opentelekomcloud/cloud-provider-opentelekomcloud/pkg/apigw/core"
+
 	"k8s.io/client-go/util/flowcontrol"
 	"k8s.io/klog"
-	"sigs.k8s.io/cloud-provider-opentelekomcloud/pkg/apigw/core"
 )
 
 const (
