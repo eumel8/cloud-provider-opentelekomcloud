@@ -8,20 +8,20 @@ metadata:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: huawei-cloud-controller-manager
+  name: opentelekomcloud-controller-manager
   namespace: kube-system
   labels:
-    k8s-app: huawei-cloud-controller-manager
+    k8s-app: opentelekomcloud-controller-manager
 spec:
   selector:
     matchLabels:
-      k8s-app: huawei-cloud-controller-manager
+      k8s-app: opentelekomcloud-controller-manager
   updateStrategy:
     type: RollingUpdate
   template:
     metadata:
       labels:
-        k8s-app: huawei-cloud-controller-manager
+        k8s-app: opentelekomcloud-controller-manager
     spec:
       nodeSelector:
         node-role.kubernetes.io/master: ""
@@ -35,13 +35,13 @@ spec:
         effect: NoSchedule
       serviceAccountName: cloud-controller-manager
       containers:
-        - name: huawei-cloud-controller-manager
-          image: swr.ap-southeast-1.myhuaweicloud.com/k8scloudcontrollermanager/huawei-cloud-controller-manager:latest
+        - name: opentelekomcloud-controller-manager
+          image: swr.ap-southeast-1.myhuaweicloud.com/k8scloudcontrollermanager/opentelekomcloud-controller-manager:latest
           args:
-            - /bin/huawei-cloud-controller-manager
+            - /bin/opentelekomcloud-controller-manager
             - --v=1
             - --cloud-config=$(CLOUD_CONFIG)
-            - --cloud-provider=huaweicloud
+            - --cloud-provider=opentelekomcloud
             - --use-service-account-credentials=true
             - --address=127.0.0.1
           volumeMounts:

@@ -1,5 +1,5 @@
 # Cloud Controller Manager Configuration
-This document describes all of the configuration options available to the `HUAWEICLOUD` cloud controller manager.
+This document describes all of the configuration options available to the `OpenTelekomCloud` cloud controller manager.
 
 ## Configuration Example
 We recommend you fetch the [example configuration](../../examples/CloudControllerManagerConfigurationExample.json) to start 
@@ -19,17 +19,16 @@ authentication.
     This is an optional parameter unless you'd like to manage AK/SK dynamically.
     And you can get an example Secret from [here](./loadbalancers/secret.yaml).
 - AccessKey: 
-    The access key and you can get according to [Obtaining an AK/SK](https://support.huaweicloud.com/en-us/devg-apisign/api-sign-provide.html).
+    The access key and you can get according to [Generating an AK and SK](https://docs.otc.t-systems.com/en-us/api/apiug/apig-en-api-180328005.html).
 - SecretKey:
-    The secret key and you can get according to [Obtaining an AK/SK](https://support.huaweicloud.com/en-us/devg-apisign/api-sign-provide.html).
+    The secret key and you can get according to [Generating an AK and SK](https://docs.otc.t-systems.com/en-us/api/apiug/apig-en-api-180328005.html).
 - IAMEndpoint:
-    IAMEndpoint is the IAM(Identity and Access Management) service's endpoint.
-    Get it from https://developer.huaweicloud.com/en-us/endpoint according to your region.
+    IAMEndpoint is the IAM(Identity and Access Management) service's endpoint https://iam.eu-de.otc.t-systems.com/v3/
 - DomainID：
-    DomainID is the account ID. You can get yours according to [How Can I Obtain domain_name, project_name, and project_id?](https://support.huaweicloud.com/intl/en-us/devg-sdk/sdk_05_0003.html).
+    DomainID is the account ID. You can get yours according to [Obtaining Required Information](https://docs.otc.t-systems.com/en-us/api/apiug/apig-en-api-180328009.html).
 - ProjectID：
     ProjectID is the project ID your workload working on.
-    Get yours according to [How Can I Obtain domain_name, project_name, and project_id?](https://support.huaweicloud.com/intl/en-us/devg-sdk/sdk_05_0003.html).
+    Get yours according to [Obtaining Required Information](https://docs.otc.t-systems.com/en-us/api/apiug/apig-en-api-180328009.html).
 - Region：
     Region is the region name.
 - Cloud：

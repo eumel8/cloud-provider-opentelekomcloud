@@ -1,4 +1,4 @@
-This document describes how to run `huawei-cloud-controller-manager` with local cluster which is setup by [kubernetes local-up-cluster](https://github.com/kubernetes/kubernetes/blob/95504c32fe1fcd1ee97879cb508f3a57fe90ca81/hack/local-up-cluster.sh).
+This document describes how to run `opentelekomcloud-controller-manager` with local cluster which is setup by [kubernetes local-up-cluster](https://github.com/kubernetes/kubernetes/blob/95504c32fe1fcd1ee97879cb508f3a57fe90ca81/hack/local-up-cluster.sh).
 
 ## Precondition
 
@@ -9,8 +9,8 @@ You can do this by following command:
 # git clone https://github.com/kubernetes/kubernetes.git
 ```
 
-#### 2. local cluster runs well without `huawei-cloud-controller-manager`
-Before start, it is recommend that run your local cluster without `huawei-cloud-controller-manager` first,
+#### 2. local cluster runs well without `opentelekomcloud-controller-manager`
+Before start, it is recommend that run your local cluster without `opentelekomcloud-controller-manager` first,
 It will help to make sure everything is OK. If there is something wrong, please dig it out and then continue the follows. 
 
 The way to run a local cluster is extremely simple. 
@@ -22,14 +22,14 @@ What you need to do is run `hack/local-up-cluster.sh` in the `kubernetes root` d
 If there is something going wrong and you can't dig out by yourself, please consider to [file an issue](https://github.com/kubernetes/kubernetes/issues/new/choose).
 
 ## Run
-#### Build `huawei-cloud-controller-manager`
+#### Build `opentelekomcloud-controller-manager`
 
-Build the `huawei-cloud-controller-manager` binary as per [Building Cloud Controller Manager](../README.md#https://github.com/kubernetes-sigs/cloud-provider-huaweicloud#building-cloud-controller-manager).
+Build the `opentelekomcloud-controller-manager` binary as per [Building Cloud Controller Manager](../README.md#https://github.com/kubernetes-sigs/cloud-provider-opentelekomcloud#building-cloud-controller-manager).
 
 And then, copy the binary to your workspace, like `/root/provider/`:
 ```
 # mkdir /root/provider
-# cp huawei-cloud-controller-manager /root/provider
+# cp opentelekomcloud-controller-manager /root/provider
 ``` 
 
 #### Prepare configuration
@@ -41,8 +41,8 @@ You can put your configuration to your workspace, e.g. `/root/provider/provider.
 You should set a bunch of environments for `hack/local-up-cluster.sh`: 
 ```
 export EXTERNAL_CLOUD_PROVIDER=true
-export EXTERNAL_CLOUD_PROVIDER_BINARY=/root/provider/huawei-cloud-controller-manager
-export CLOUD_PROVIDER="huaweicloud"
+export EXTERNAL_CLOUD_PROVIDER_BINARY=/root/provider/opentelekomcloud-controller-manager
+export CLOUD_PROVIDER="opentelekomcloud"
 export CLOUD_CONFIG=/root/provider/provider.conf
 
 # Why: add elb health check member who must not be 127.0.0.1.
@@ -74,5 +74,5 @@ Then, what you need to do is run `hack/local-up-cluster.sh` in the `kubernetes r
 ```  
 
 ## Debug
-You can get the `huawei-cloud-controller-manager` logs from `/tmp/cloud-controller-manager.log`.
+You can get the `opentelekomcloud-controller-manager` logs from `/tmp/cloud-controller-manager.log`.
 Anything going wrong, please feel free to report an issue.

@@ -1,4 +1,4 @@
-module sigs.k8s.io/cloud-provider-huaweicloud
+module sigs.k8s.io/cloud-provider-opentelekomcloud // FIX!
 
 go 1.13
 
