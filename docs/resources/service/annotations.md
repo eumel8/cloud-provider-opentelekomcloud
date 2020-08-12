@@ -8,10 +8,6 @@ There are several annotations you may used for your `Service` with `LoadBalancer
 - `kubernetes.io/elb.class: performance`: enhanced load balancer(instance is not shared).
 - `kubernetes.io/elb.class: dnat`: network address translation.
 
-More docs:
-- [Differences Between Classic and Enhanced Load Balancers](https://support.huaweicloud.com/en-us/productdesc-elb/en-us_elb_01_0007.html)
-- [What Is NAT Gateway](https://support.huaweicloud.com/en-us/productdesc-natgateway/en-us_topic_0086739762.html) 
-
 ## Specify session affinity
 These are optional annotations, it depends on if you want a session affinity feature.
 

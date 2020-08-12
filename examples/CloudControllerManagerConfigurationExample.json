@@ -8,11 +8,11 @@
         "region": "eu-de",
         "vpcId": "a6f86371-8f14-4eff-b433-bd920fb45e5e",
         "subnetId": "a5fa06ea-c5f3-499f-8af3-df732245aab8",
-        "ecsEndpoint": "https://ecs.eu-de.otc.t-systems.com/v2.1/",
-        "elbEndpoint": "https://elb.eu-de.otc.t-systems.com/v1.0/",
-        "albEndpoint": "https://elb.eu-de.otc.t-systems.com/v1.0/",
-        "vpcEndpoint": "https://vpc.eu-de.otc.t-systems.com/v2.0/",
-        "natEndpoint": "https://nat.eu-de.otc.t-systems.com/v2.0/",
+        "ecsEndpoint": "https://ecs.eu-de.otc.t-systems.com/",
+        "elbEndpoint": "https://elb.eu-de.otc.t-systems.com/",
+        "albEndpoint": "https://elb.eu-de.otc.t-systems.com/",
+        "vpcEndpoint": "https://vpc.eu-de.otc.t-systems.com/",
+        "natEndpoint": "https://nat.eu-de.otc.t-systems.com/",
         "enterpriseEnable": "false"
     },
     "Auth": {

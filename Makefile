@@ -17,11 +17,9 @@ SOURCES := $(shell find . -type f  -name '*.go')
 LDFLAGS := ""
 
 # Images management
-REGISTRY_REGION?="ap-southeast-1"
+REGISTRY_REGION?="eu-de"
 ACCESS_KEY?=""
 REGISTRY_LOGIN_KEY?=""
-SWR_SERVICE_ADDRESS?="swr.ap-southeast-1.myhuaweicloud.com"
-REGISTRY?="${SWR_SERVICE_ADDRESS}/k8scloudcontrollermanager"
 
 # Set you version by env or using latest tags from git
 VERSION?=$(shell git describe --tags)
@@ -40,15 +38,3 @@ verify:
 
 test:
 	go test ./...
-
-images: image-opentelekomcloud-controller-manager
-
-image-opentelekomcloud-controller-manager: opentelekomcloud-controller-manager
-	cp opentelekomcloud-controller-manager cluster/images/cloud-controller-manager && \
-	docker build -t $(REGISTRY)/opentelekomcloud-controller-manager:$(VERSION) cluster/images/cloud-controller-manager && \
-	rm cluster/images/cloud-controller-manager/opentelekomcloud-controller-manager
-
-upload-images: images
-	@echo "push images to $(REGISTRY)"
-	docker login -u ${REGISTRY_REGION}@${ACCESS_KEY} -p ${REGISTRY_LOGIN_KEY} ${SWR_SERVICE_ADDRESS}
-	docker push ${REGISTRY}/opentelekomcloud-controller-manager:${VERSION}

@@ -45,15 +45,14 @@ type AuthOpts struct {
 	// and click Access Keys to create an AK and SK.
 	SecretKey string `json:"SecretKey"`
 	// IAMEndpoint is the IAM(Identity and Access Management) service's endpoint.
-	// Get it from https://developer.huaweicloud.com/en-us/endpoint according to your region.
-	// E.g. 'iam.ap-southeast-1.myhwclouds.com'.
+	// E.g. 'https://iam.eu-de.otc.t-systems.com/v3/'.
 	IAMEndpoint string `json:"IAMEndpoint"`
 	// DomainID is the account ID.
-	// Please refer to https://support.huaweicloud.com/intl/en-us/devg-sdk/sdk_05_0003.html.
+	// Please refer to https://docs.otc.t-systems.com/en-us/api/apiug/apig-en-api-180328009.html.
 	// E.g. '052ca6e3530010490f52c0135f7ff501'
 	DomainID string `json:"DomainID"`
 	// ProjectID is the project ID your workload working on.
-	// Please refer to https://support.huaweicloud.com/intl/en-us/devg-sdk/sdk_05_0003.html.
+	// Please refer to https://docs.otc.t-systems.com/en-us/api/apiug/apig-en-api-180328009.html.
 	// E.g. '052d4df9f8800f2f2f99c0134ed5b282'
 	ProjectID string `json:"ProjectID"`
 	// Region is the region name.
