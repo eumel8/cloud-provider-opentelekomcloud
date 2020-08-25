@@ -17,38 +17,24 @@ SOURCES := $(shell find . -type f  -name '*.go')
 LDFLAGS := ""
 
 # Images management
-REGISTRY_REGION?="ap-southeast-1"
+REGISTRY_REGION?="eu-de"
 ACCESS_KEY?=""
 REGISTRY_LOGIN_KEY?=""
-SWR_SERVICE_ADDRESS?="swr.ap-southeast-1.myhuaweicloud.com"
-REGISTRY?="${SWR_SERVICE_ADDRESS}/k8scloudcontrollermanager"
 
 # Set you version by env or using latest tags from git
 VERSION?=$(shell git describe --tags)
 
-huawei-cloud-controller-manager: $(SOURCES)
+opentelekomcloud-controller-manager: $(SOURCES)
 	CGO_ENABLED=0 GOOS=$(GOOS) go build \
 		-ldflags $(LDFLAGS) \
-		-o huawei-cloud-controller-manager \
+		-o opentelekomcloud-controller-manager \
 		cmd/cloud-controller-manager/cloud-controller-manager.go
 
 clean:
-	rm -rf huawei-cloud-controller-manager
+	rm -rf opentelekomcloud-controller-manager
 
 verify:
 	hack/verify.sh
 
 test:
 	go test ./...
-
-images: image-huawei-cloud-controller-manager
-
-image-huawei-cloud-controller-manager: huawei-cloud-controller-manager
-	cp huawei-cloud-controller-manager cluster/images/cloud-controller-manager && \
-	docker build -t $(REGISTRY)/huawei-cloud-controller-manager:$(VERSION) cluster/images/cloud-controller-manager && \
-	rm cluster/images/cloud-controller-manager/huawei-cloud-controller-manager
-
-upload-images: images
-	@echo "push images to $(REGISTRY)"
-	docker login -u ${REGISTRY_REGION}@${ACCESS_KEY} -p ${REGISTRY_LOGIN_KEY} ${SWR_SERVICE_ADDRESS}
-	docker push ${REGISTRY}/huawei-cloud-controller-manager:${VERSION}

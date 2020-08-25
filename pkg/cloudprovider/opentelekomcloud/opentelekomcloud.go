@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package huaweicloud
+package opentelekomcloud
 
 import (
 	"context"
@@ -27,9 +27,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,13 +40,13 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/cloud-provider"
+	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/klog"
 )
 
 // Cloud provider name: PaaS Web Services.
 const (
-	ProviderName               = "huaweicloud"
+	ProviderName               = "opentelekomcloud"
 	ELBIDAnnotation            = "kubernetes.io/elb.id"
 	ELBClassAnnotation         = "kubernetes.io/elb.class"
 	ELBMarkAnnotation          = "kubernetes.io/elb.mark"
@@ -404,7 +404,7 @@ func init() {
 
 func NewHWSCloud(config io.Reader) (*HWSCloud, error) {
 	if config == nil {
-		return nil, fmt.Errorf("huaweicloud provider config is nil")
+		return nil, fmt.Errorf("opentelekomcloud provider config is nil")
 	}
 
 	globalConfig, err := ReadConf(config)
@@ -626,7 +626,7 @@ func (hws *HWSCloud) HasClusterID() bool {
 func (h *HWSCloud) Initialize(clientBuilder cloudprovider.ControllerClientBuilder, stop <-chan struct{}) {
 }
 
-// TCPLoadBalancer returns an implementation of TCPLoadBalancer for Huawei Web Services.
+// TCPLoadBalancer returns an implementation of TCPLoadBalancer for T-Systems Web Services.
 func (h *HWSCloud) LoadBalancer() (cloudprovider.LoadBalancer, bool) {
 	return h, true
 }
@@ -640,17 +640,17 @@ func (h *HWSCloud) Instances() (cloudprovider.Instances, bool) {
 	return instance, true
 }
 
-// Zones returns an implementation of Zones for Huawei Web Services.
+// Zones returns an implementation of Zones for T-Systems Web Services.
 func (h *HWSCloud) Zones() (cloudprovider.Zones, bool) {
 	return h, true
 }
 
-// Clusters returns an implementation of Clusters for Huawei Web Services.
+// Clusters returns an implementation of Clusters for T-Systems Web Services.
 func (h *HWSCloud) Clusters() (cloudprovider.Clusters, bool) {
 	return h, true
 }
 
-// Routes returns an implementation of Routes for Huawei Web Services.
+// Routes returns an implementation of Routes for T-Systems Web Services.
 func (h *HWSCloud) Routes() (cloudprovider.Routes, bool) {
 	return h, true
 }

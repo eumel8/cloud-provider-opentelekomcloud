@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package huaweicloud
+package opentelekomcloud
 
 import (
 	"context"
@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/RainbowMango/huaweicloud-sdk-go"
+	gophercloud "github.com/RainbowMango/huaweicloud-sdk-go"
 	"github.com/RainbowMango/huaweicloud-sdk-go/openstack/compute/v2/servers"
 	th "github.com/RainbowMango/huaweicloud-sdk-go/testhelper"
 	"github.com/RainbowMango/huaweicloud-sdk-go/testhelper/client"

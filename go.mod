@@ -1,4 +1,4 @@
-module sigs.k8s.io/cloud-provider-huaweicloud
+module opentelekomcloud/cloud-provider-opentelekomcloud
 
 go 1.13
 

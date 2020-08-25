@@ -1,5 +1,5 @@
-# Kubernetes Cloud Provider for HUAWEI CLOUD
-This repository contains the [Kubernetes cloud-controller-manager](https://kubernetes.io/docs/concepts/architecture/cloud-controller/) for HUAWEICLOUD.
+# Kubernetes Cloud Provider for OpenTelekomCloud
+This repository contains the [Kubernetes cloud-controller-manager](https://kubernetes.io/docs/concepts/architecture/cloud-controller/) for OpenTelekomCloud.
 
 Successfully running cloud-controller-manager requires some changes to your cluster configuration.
 - `kube-apiserver` and `kube-controller-manager` MUST NOT specify the `--cloud-provider` flag
@@ -17,8 +17,8 @@ To keep it simple, you can use vendor as well.
 
 #### build locally
 ```
-$ git clone https://github.com/kubernetes-sigs/cloud-provider-huaweicloud.git 
-$ make huawei-cloud-controller-manager
+$ git clone https://github.com/opentelekomcloud/cloud-provider-opentelekomcloud
+$ make opentelekomcloud-controller-manager
 ```
 
 ## More about CCM
@@ -27,4 +27,4 @@ $ make huawei-cloud-controller-manager
 - [Developing Cloud Controller Manager](https://kubernetes.io/docs/tasks/administer-cluster/developing-cloud-controller-manager/)
 
 ## Support
-Any questions feel free to [send an issue](https://github.com/kubernetes-sigs/cloud-provider-huaweicloud/issues/new).  
+Any questions feel free to [send an issue](https://github.com/opentelekomcloud/cloud-provider-opentelekomcloud/issues/new).  

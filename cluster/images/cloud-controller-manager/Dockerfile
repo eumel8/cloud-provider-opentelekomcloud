@@ -16,6 +16,6 @@ FROM alpine:3.7
 
 RUN apk add --no-cache ca-certificates
 
-ADD huawei-cloud-controller-manager /bin/
+ADD opentelekomcloud-controller-manager /bin/
 
-CMD ["/bin/huawei-cloud-controller-manager"]
+CMD ["/bin/opentelekomcloud-controller-manager"]
