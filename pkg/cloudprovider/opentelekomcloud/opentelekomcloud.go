@@ -435,10 +435,10 @@ func NewHWSCloud(config io.Reader) (*HWSCloud, error) {
 	secretInformer := cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return kubeClient.Secrets(metav1.NamespaceAll).List(options)
+				return kubeClient.Secrets(metav1.NamespaceAll).List(context.TODO(), options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				return kubeClient.Secrets(metav1.NamespaceAll).Watch(options)
+				return kubeClient.Secrets(metav1.NamespaceAll).Watch(context.TODO(), options)
 			},
 		},
 		&v1.Secret{},
@@ -638,6 +638,15 @@ func (h *HWSCloud) Instances() (cloudprovider.Instances, bool) {
 	}
 
 	return instance, true
+}
+
+func (h *HWSCloud) InstancesV2() (cloudprovider.InstancesV2, bool) {
+	return nil, false
+//	instance := &InstancesV2{
+//		GetServerClientFunc: h.config.Auth.getServerClient,
+//	}
+//
+//	return instance, true
 }
 
 // Zones returns an implementation of Zones for T-Systems Web Services.
@@ -842,7 +851,7 @@ func updateServiceStatus(
 			}
 		}
 		toUpdate.Annotations[ELBMarkAnnotation] = mark
-		_, err := kubeClient.Services(service.Namespace).Update(toUpdate)
+		_, err := kubeClient.Services(service.Namespace).Update(context.TODO(), toUpdate, metav1.UpdateOptions{})
 		if err == nil {
 			return
 		}
@@ -856,7 +865,7 @@ func updateServiceStatus(
 		}
 
 		if apierrors.IsConflict(err) {
-			service, err = kubeClient.Services(service.Namespace).Get(service.Name, metav1.GetOptions{})
+			service, err = kubeClient.Services(service.Namespace).Get(context.TODO(),service.Name, metav1.GetOptions{})
 			if err != nil {
 				klog.Warningf("Get service(%s/%s) error: %v", service.Namespace, service.Name, err)
 				continue
@@ -886,7 +895,7 @@ func updateServiceMarkIfNeeded(
 			delete(toUpdate.Annotations, ELBMarkAnnotation)
 		}
 
-		_, err := kubeClient.Services(service.Namespace).Update(toUpdate)
+		_, err := kubeClient.Services(service.Namespace).Update(context.TODO(), toUpdate, metav1.UpdateOptions{})
 		if err == nil {
 			return
 		}
@@ -901,7 +910,7 @@ func updateServiceMarkIfNeeded(
 		}
 
 		if apierrors.IsConflict(err) {
-			service, err = kubeClient.Services(service.Namespace).Get(service.Name, metav1.GetOptions{})
+			service, err = kubeClient.Services(service.Namespace).Get(context.TODO(), service.Name, metav1.GetOptions{})
 			if err != nil {
 				klog.Warningf("Get service(%s/%s) error: %v", service.Namespace, service.Name, err)
 				continue

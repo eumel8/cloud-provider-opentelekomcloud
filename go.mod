@@ -1,6 +1,6 @@
 module opentelekomcloud/cloud-provider-opentelekomcloud
 
-go 1.13
+go 1.17
 
 require (
 	github.com/RainbowMango/huaweicloud-sdk-go v0.0.0
@@ -13,6 +13,7 @@ require (
 	k8s.io/cloud-provider v0.21.9
 	k8s.io/component-base v0.21.9
 	k8s.io/klog v1.0.0
+	k8s.io/klog/v2 v2.9.0
 	k8s.io/kubernetes v1.21.9
 )
 

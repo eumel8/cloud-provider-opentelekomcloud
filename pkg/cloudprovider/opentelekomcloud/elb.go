@@ -52,7 +52,7 @@ type tempServicePort struct {
 	listener    *ListenerDetail
 }
 
-func (elb *ELBCloud) getSecret(namespace, secretName string) (*Secret, error) {
+func (elb *ELBCloud) getSecret(ctx context.Context, namespace, secretName string) (*Secret, error) {
 	var kubeSecret *v1.Secret
 
 	key := namespace + "/" + secretName
@@ -60,7 +60,7 @@ func (elb *ELBCloud) getSecret(namespace, secretName string) (*Secret, error) {
 	if ok {
 		kubeSecret = obj.(*v1.Secret)
 	} else {
-		secret, err := elb.kubeClient.Secrets(namespace).Get(secretName, metav1.GetOptions{})
+		secret, err := elb.kubeClient.Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -87,8 +87,8 @@ func (elb *ELBCloud) getSecret(namespace, secretName string) (*Secret, error) {
 }
 
 //getELBClient
-func (elb *ELBCloud) ELBClient(namespace string) (*ELBClient, error) {
-	secret, err := elb.getSecret(namespace, elb.config.SecretName)
+func (elb *ELBCloud) ELBClient(ctx context.Context, namespace string) (*ELBClient, error) {
+	secret, err := elb.getSecret(ctx, namespace, elb.config.SecretName)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (elb *ELBCloud) ELBClient(namespace string) (*ELBClient, error) {
 func (elb *ELBCloud) GetLoadBalancer(ctx context.Context, clusterName string, service *v1.Service) (status *v1.LoadBalancerStatus, exists bool, err error) {
 	status = &v1.LoadBalancerStatus{}
 	// get the apigateway client
-	listeners, err := elb.getListenersByService(service)
+	listeners, err := elb.getListenersByService(ctx, service)
 	if err != nil {
 		return nil, false, err
 	}
@@ -238,8 +238,8 @@ func (elb *ELBCloud) ensureCreateListener(
 	return listener.ID, nil
 }
 
-func (elb *ELBCloud) getPods(name, namespace string) (*v1.PodList, error) {
-	service, err := elb.kubeClient.Services(namespace).Get(name, metav1.GetOptions{})
+func (elb *ELBCloud) getPods(ctx context.Context, name, namespace string) (*v1.PodList, error) {
+	service, err := elb.kubeClient.Services(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +252,7 @@ func (elb *ELBCloud) getPods(name, namespace string) (*v1.PodList, error) {
 	set = service.Spec.Selector
 	labelSelector := set.AsSelector()
 	opts := metav1.ListOptions{LabelSelector: labelSelector.String()}
-	return elb.kubeClient.Pods(namespace).List(opts)
+	return elb.kubeClient.Pods(namespace).List(ctx, opts)
 }
 
 // Not implemented
@@ -267,18 +267,18 @@ func (elb *ELBCloud) GetLoadBalancerName(ctx context.Context, clusterName string
 func (elb *ELBCloud) EnsureLoadBalancer(ctx context.Context, clusterName string, service *v1.Service, hosts []*v1.Node) (*v1.LoadBalancerStatus, error) {
 	// func (elb *ELBCloud) EnsureLoadBalancer(name, region string, loadBalancerIP net.IP, ports []*v1.ServicePort, hosts []string, servicename types.NamespacedName, affinityType v1.ServiceAffinity, annotations map[string]string) (*v1.LoadBalancerStatus, error) {
 	klog.Infof("Begin to ensure loadbalancer configuration of service(%s/%s)", service.Namespace, service.Name)
-	elbProvider, err := elb.ELBClient(service.Namespace)
+	elbProvider, err := elb.ELBClient(ctx, service.Namespace)
 	if err != nil {
 		return nil, err
 	}
 
 	healthCheckPort := GetHealthCheckPort(service)
-	listeners, err := elb.getListenersByService(service)
+	listeners, err := elb.getListenersByService(ctx, service)
 	if err != nil {
 		return nil, err
 	}
 
-	members, err := elb.generateMembers(service)
+	members, err := elb.generateMembers(ctx, service)
 	if err != nil {
 		return nil, err
 	}
@@ -341,17 +341,17 @@ func (elb *ELBCloud) EnsureLoadBalancer(ctx context.Context, clusterName string,
 func (elb *ELBCloud) UpdateLoadBalancer(ctx context.Context, clusterName string, service *v1.Service, hosts []*v1.Node) error {
 	// if the node changed ,the server_id mark the VM will change, need to update the global
 	klog.Infof("Begin to update loadbalancer configuration of service(%s/%s)", service.Namespace, service.Name)
-	elbProvider, err := elb.ELBClient(service.Namespace)
+	elbProvider, err := elb.ELBClient(ctx, service.Namespace)
 	if err != nil {
 		return err
 	}
 
-	members, err := elb.generateMembers(service)
+	members, err := elb.generateMembers(ctx, service)
 	if err != nil {
 		return err
 	}
 
-	listeners, err := elb.getListenersByService(service)
+	listeners, err := elb.getListenersByService(ctx, service)
 	if err != nil {
 		return err
 	}
@@ -470,12 +470,12 @@ func (elb *ELBCloud) gracefulRemoveElbMembers(existMembers map[string]*MemDetail
 // EnsureTCPLoadBalancerDeleted is an implementation of TCPLoadBalancer.EnsureTCPLoadBalancerDeleted.
 func (elb *ELBCloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName string, service *v1.Service) error {
 	klog.Infof("Begin to delete loadbalancer configuration of service(%s/%s)", service.Namespace, service.Name)
-	elbProvider, err := elb.ELBClient(service.Namespace)
+	elbProvider, err := elb.ELBClient(ctx, service.Namespace)
 	if err != nil {
 		return err
 	}
 
-	listeners, err := elb.getListenersByService(service)
+	listeners, err := elb.getListenersByService(ctx, service)
 	if err != nil {
 		return err
 	}
@@ -497,8 +497,8 @@ func (elb *ELBCloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName 
 	return utilerrors.NewAggregate(errs)
 }
 
-func (elb *ELBCloud) getListenersByService(service *v1.Service) ([]*ListenerDetail, error) {
-	elbProvider, err := elb.ELBClient(service.Namespace)
+func (elb *ELBCloud) getListenersByService(ctx context.Context, service *v1.Service) ([]*ListenerDetail, error) {
+	elbProvider, err := elb.ELBClient(ctx, service.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -563,8 +563,8 @@ func (elb *ELBCloud) compare(
 	return needsCreate, needsUpdate, needsDelete
 }
 
-func (elb *ELBCloud) generateMembers(service *v1.Service) ([]*Member, error) {
-	podList, err := elb.getPods(service.Name, service.Namespace)
+func (elb *ELBCloud) generateMembers(ctx context.Context, service *v1.Service) ([]*Member, error) {
+	podList, err := elb.getPods(ctx, service.Name, service.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -586,7 +586,7 @@ func (elb *ELBCloud) generateMembers(service *v1.Service) ([]*Member, error) {
 			continue
 		}
 
-		node, err := elb.kubeClient.Nodes().Get(item.Spec.NodeName, metav1.GetOptions{})
+		node, err := elb.kubeClient.Nodes().Get(ctx, item.Spec.NodeName, metav1.GetOptions{})
 		if err != nil {
 			klog.Warningf("Get node(%s) error: %v", item.Spec.NodeName, err)
 			continue

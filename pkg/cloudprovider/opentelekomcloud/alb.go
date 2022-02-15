@@ -91,7 +91,7 @@ func (alb *ALBCloud) GetLoadBalancer(ctx context.Context, clusterName string, se
 /*
  *    Not implemented
  */
-func (alb *ALBCloud) GetLoadBalancerName(ctx *context.Context, clusterName string, service *v1.Service) string {
+func (alb *ALBCloud) GetLoadBalancerName(ctx context.Context, clusterName string, service *v1.Service) string {
 	return ""
 }
 
@@ -871,7 +871,7 @@ func (alb *ALBCloud) checkAlbInstance(ctx context.Context, service *v1.Service, 
 		}
 		serviceCopy.Annotations[ELBIDAnnotation] = lb.Id
 		if service.Spec.LoadBalancerIP == "" {
-			eip, err := alb.getPublicIpFromPrivateIp(service.Namespace, lb.VipPortDd)
+			eip, err := alb.getPublicIpFromPrivateIp(ctx, service.Namespace, lb.VipPortDd)
 			if err != nil {
 				return "", err
 			}
@@ -1516,7 +1516,7 @@ func (alb *ALBCloud) updateService(ctx context.Context, service *v1.Service) (*v
 	serviceCopy := service.DeepCopy()
 	for i := 0; i < MaxRetry; i++ {
 		toUpdate := service.DeepCopy()
-		toUpdate, err = alb.kubeClient.Services(toUpdate.Namespace).Update(ctx, toUpdate)
+		toUpdate, err = alb.kubeClient.Services(toUpdate.Namespace).Update(ctx, toUpdate, metav1.UpdateOptions{})
 		if err == nil {
 			return toUpdate, nil
 		}
@@ -1528,7 +1528,7 @@ func (alb *ALBCloud) updateService(ctx context.Context, service *v1.Service) (*v
 		}
 
 		if apierrors.IsConflict(err) {
-			service, err = alb.kubeClient.Services(ctx, service.Namespace).Get(service.Name, metav1.GetOptions{})
+			service, err = alb.kubeClient.Services(service.Namespace).Get(ctx, service.Name, metav1.GetOptions{})
 			if err != nil {
 				service = serviceCopy
 				klog.Warningf("Get service(%s/%s) error: %v", service.Namespace, service.Name, err)

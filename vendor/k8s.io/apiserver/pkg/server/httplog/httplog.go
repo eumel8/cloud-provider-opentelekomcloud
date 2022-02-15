@@ -23,9 +23,10 @@ import (
 	"net"
 	"net/http"
 	"runtime"
+	"sync"
 	"time"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // StacktracePred returns true if a stacktrace should be logged for this status.
@@ -51,13 +52,17 @@ type respLogger struct {
 	statusRecorded bool
 	status         int
 	statusStack    string
-	addedInfo      string
-	startTime      time.Time
+	// mutex is used when accessing addedInfo
+	// It can be modified by other goroutine when logging happens (in case of request timeout)
+	mutex     sync.Mutex
+	addedInfo string
+	startTime time.Time
 
 	captureErrorOutput bool
 
-	req *http.Request
-	w   http.ResponseWriter
+	req       *http.Request
+	userAgent string
+	w         http.ResponseWriter
 
 	logStacktracePred StacktracePred
 }
@@ -85,7 +90,9 @@ func WithLogging(handler http.Handler, pred StacktracePred) http.Handler {
 		rl := newLogged(req, w).StacktraceWhen(pred)
 		req = req.WithContext(context.WithValue(ctx, respLoggerContextKey, rl))
 
-		defer rl.Log()
+		if klog.V(3).Enabled() {
+			defer func() { klog.InfoS("HTTP", rl.LogArgs()...) }()
+		}
 		handler.ServeHTTP(rl, req)
 	})
 }
@@ -105,6 +112,7 @@ func newLogged(req *http.Request, w http.ResponseWriter) *respLogger {
 	return &respLogger{
 		startTime:         time.Now(),
 		req:               req,
+		userAgent:         req.UserAgent(),
 		w:                 w,
 		logStacktracePred: DefaultStacktracePred,
 	}
@@ -150,19 +158,48 @@ func StatusIsNot(statuses ...int) StacktracePred {
 
 // Addf adds additional data to be logged with this request.
 func (rl *respLogger) Addf(format string, data ...interface{}) {
+	rl.mutex.Lock()
+	defer rl.mutex.Unlock()
 	rl.addedInfo += "\n" + fmt.Sprintf(format, data...)
 }
 
-// Log is intended to be called once at the end of your request handler, via defer
-func (rl *respLogger) Log() {
+func (rl *respLogger) LogArgs() []interface{} {
 	latency := time.Since(rl.startTime)
-	if klog.V(3) {
-		if !rl.hijacked {
-			klog.InfoDepth(1, fmt.Sprintf("%s %s: (%v) %v%v%v [%s %s]", rl.req.Method, rl.req.RequestURI, latency, rl.status, rl.statusStack, rl.addedInfo, rl.req.UserAgent(), rl.req.RemoteAddr))
-		} else {
-			klog.InfoDepth(1, fmt.Sprintf("%s %s: (%v) hijacked [%s %s]", rl.req.Method, rl.req.RequestURI, latency, rl.req.UserAgent(), rl.req.RemoteAddr))
+	if rl.hijacked {
+		return []interface{}{
+			"verb", rl.req.Method,
+			"URI", rl.req.RequestURI,
+			"latency", latency,
+			"userAgent", rl.userAgent,
+			"srcIP", rl.req.RemoteAddr,
+			"hijacked", true,
 		}
 	}
+	args := []interface{}{
+		"verb", rl.req.Method,
+		"URI", rl.req.RequestURI,
+		"latency", latency,
+		// We can't get UserAgent from rl.req.UserAgent() here as it accesses headers map,
+		// which can be modified in another goroutine when apiserver request times out.
+		// For example authentication filter modifies request's headers,
+		// This can cause apiserver to crash with unrecoverable fatal error.
+		// More info about concurrent read and write for maps: https://golang.org/doc/go1.6#runtime
+		"userAgent", rl.userAgent,
+		"srcIP", rl.req.RemoteAddr,
+		"resp", rl.status,
+	}
+
+	rl.mutex.Lock()
+	defer rl.mutex.Unlock()
+
+	if len(rl.statusStack) > 0 {
+		args = append(args, "statusStack", rl.statusStack)
+	}
+
+	if len(rl.addedInfo) > 0 {
+		args = append(args, "addedInfo", rl.addedInfo)
+	}
+	return args
 }
 
 // Header implements http.ResponseWriter.
@@ -186,7 +223,7 @@ func (rl *respLogger) Write(b []byte) (int, error) {
 func (rl *respLogger) Flush() {
 	if flusher, ok := rl.w.(http.Flusher); ok {
 		flusher.Flush()
-	} else if klog.V(2) {
+	} else if klog.V(2).Enabled() {
 		klog.InfoDepth(1, fmt.Sprintf("Unable to convert %+v into http.Flusher", rl.w))
 	}
 }

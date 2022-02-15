@@ -67,7 +67,7 @@ type NATCloud struct {
 
 func (nat *NATCloud) GetLoadBalancer(ctx context.Context, clusterName string, service *v1.Service) (status *v1.LoadBalancerStatus, exists bool, err error) {
 	status = &v1.LoadBalancerStatus{}
-	natClient, err := nat.getNATClient(service.Namespace)
+	natClient, err := nat.getNATClient(ctx, service.Namespace)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, false, nil
@@ -116,7 +116,7 @@ func (nat *NATCloud) EnsureLoadBalancer(ctx context.Context, clusterName string,
 	status := &v1.LoadBalancerStatus{}
 
 	// step 0: ensure the nat gateway is exist
-	natProvider, err := nat.getNATClient(service.Namespace)
+	natProvider, err := nat.getNATClient(ctx, service.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (nat *NATCloud) EnsureLoadBalancer(ctx context.Context, clusterName string,
 		return nil, err
 	}
 
-	allDnatRuleInFloatIP, err := listAllDnatRuleByFloatIP(natProvider, service.Spec.LoadBalancerIP)
+	allDnatRuleInFloatIP, err := listAllDnatRuleByFloatIP(ctx, natProvider, service.Spec.LoadBalancerIP)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (nat *NATCloud) EnsureLoadBalancer(ctx context.Context, clusterName string,
 	}
 
 	//step 2: get podList (with labels/selectors of this service),then get the backend to create DNAT rule
-	podList, err := nat.getPods(service.Name, service.Namespace)
+	podList, err := nat.getPods(ctx, service.Name, service.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func (nat *NATCloud) EnsureLoadBalancer(ctx context.Context, clusterName string,
 	}
 
 	//get service with loadbalancer type and loadbalancer ip
-	lbServers, err := nat.kubeClient.Services("").List(metav1.ListOptions{})
+	lbServers, err := nat.kubeClient.Services("").List(ctx, metav1.ListOptions{})
 	var lbPorts []v1.ServicePort
 	for _, svc := range lbServers.Items {
 		lbType := svc.Annotations[ELBClassAnnotation]
@@ -263,7 +263,7 @@ func listDnatRule(natProvider *NATClient, natGatewayId string) (*DNATRuleList, e
 	return &distList, nil
 }
 
-func listAllDnatRuleByFloatIP(natProvider *NATClient, floatIP string) (*DNATRuleList, error) {
+func listAllDnatRuleByFloatIP(ctx context.Context, natProvider *NATClient, floatIP string) (*DNATRuleList, error) {
 	params := map[string]string{"floating_ip_address": floatIP}
 	dnatRuleList, err := natProvider.ListDNATRules(params)
 	if err != nil {
@@ -277,7 +277,7 @@ func listAllDnatRuleByFloatIP(natProvider *NATClient, floatIP string) (*DNATRule
 //        (2) check whether the node whose port set in the rule is health
 //        (3) if not health delete the previous and create a new one
 func (nat *NATCloud) UpdateLoadBalancer(ctx context.Context, clusterName string, service *v1.Service, nodes []*v1.Node) error {
-	natProvider, err := nat.getNATClient(service.Namespace)
+	natProvider, err := nat.getNATClient(ctx, service.Namespace)
 	if err != nil {
 		return err
 	}
@@ -307,7 +307,7 @@ func (nat *NATCloud) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		return err
 	}
 
-	allDnatRuleInFloatIP, err := listAllDnatRuleByFloatIP(natProvider, service.Spec.LoadBalancerIP)
+	allDnatRuleInFloatIP, err := listAllDnatRuleByFloatIP(ctx, natProvider, service.Spec.LoadBalancerIP)
 	if err != nil {
 		return err
 	}
@@ -316,7 +316,7 @@ func (nat *NATCloud) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		return fmt.Errorf("The floating ip %v is binding to port,and its not DNAT rule in natGateway %s ", floatingIp.FloatingIpAddress, natGateway.Name)
 	}
 
-	podList, err := nat.getPods(service.Name, service.Namespace)
+	podList, err := nat.getPods(ctx, service.Name, service.Namespace)
 	if err != nil {
 		return err
 	}
@@ -362,7 +362,7 @@ func (nat *NATCloud) UpdateLoadBalancer(ctx context.Context, clusterName string,
 				errs = append(errs, fmt.Errorf("The port has no ipAddress binded "))
 				continue
 			}
-			node, err := nat.kubeClient.Nodes().Get(networkPort.FixedIps[0].IpAddress, metav1.GetOptions{})
+			node, err := nat.kubeClient.Nodes().Get(ctx, networkPort.FixedIps[0].IpAddress, metav1.GetOptions{})
 			if err != nil {
 				klog.Errorf("Get node(%s) error: %v", networkPort.FixedIps[0].IpAddress, err)
 				continue
@@ -398,7 +398,7 @@ func (nat *NATCloud) UpdateLoadBalancer(ctx context.Context, clusterName string,
 //        (1) find the DNAT rules of the service
 //        (2) delete the DNAT rule
 func (nat *NATCloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName string, service *v1.Service) error {
-	natProvider, err := nat.getNATClient(service.Namespace)
+	natProvider, err := nat.getNATClient(ctx, service.Namespace)
 	if err != nil {
 		return err
 	}
@@ -432,8 +432,8 @@ func (nat *NATCloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName 
  *               Util function
  *    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
  */
-func (nat *NATCloud) getNATClient(namespace string) (*NATClient, error) {
-	secret, err := nat.getSecret(namespace, nat.config.SecretName)
+func (nat *NATCloud) getNATClient(ctx context.Context, namespace string) (*NATClient, error) {
+	secret, err := nat.getSecret(ctx, namespace, nat.config.SecretName)
 	if err != nil {
 		return nil, err
 	}
@@ -467,7 +467,7 @@ func (nat *NATCloud) getNATClient(namespace string) (*NATClient, error) {
 	), nil
 }
 
-func (nat *NATCloud) getSecret(namespace, secretName string) (*Secret, error) {
+func (nat *NATCloud) getSecret(ctx context.Context, namespace, secretName string) (*Secret, error) {
 	var kubeSecret *v1.Secret
 
 	key := namespace + "/" + secretName
@@ -475,7 +475,7 @@ func (nat *NATCloud) getSecret(namespace, secretName string) (*Secret, error) {
 	if ok {
 		kubeSecret = obj.(*v1.Secret)
 	} else {
-		secret, err := nat.kubeClient.Secrets(namespace).Get(secretName, metav1.GetOptions{})
+		secret, err := nat.kubeClient.Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -501,8 +501,8 @@ func (nat *NATCloud) getSecret(namespace, secretName string) (*Secret, error) {
 	return &secret, nil
 }
 
-func (nat *NATCloud) getPods(name, namespace string) (*v1.PodList, error) {
-	service, err := nat.kubeClient.Services(namespace).Get(name, metav1.GetOptions{})
+func (nat *NATCloud) getPods(ctx context.Context, name, namespace string) (*v1.PodList, error) {
+	service, err := nat.kubeClient.Services(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -515,7 +515,7 @@ func (nat *NATCloud) getPods(name, namespace string) (*v1.PodList, error) {
 	set = service.Spec.Selector
 	labelSelector := set.AsSelector()
 	opts := metav1.ListOptions{LabelSelector: labelSelector.String()}
-	return nat.kubeClient.Pods(namespace).List(opts)
+	return nat.kubeClient.Pods(namespace).List(ctx, opts)
 }
 
 func genDNATRuleDescription() string {

@@ -58,6 +58,10 @@ type Instances struct {
 	GetServerClientFunc func() (*gophercloud.ServiceClient, error)
 }
 
+type InstancesV2 struct {
+	GetServerClientFunc func() (*gophercloud.ServiceClient, error)
+}
+
 // Check if our Instances implements necessary interface
 var _ cloudprovider.Instances = &Instances{}
 

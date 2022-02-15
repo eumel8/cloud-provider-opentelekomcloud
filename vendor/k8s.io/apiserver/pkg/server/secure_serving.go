@@ -20,14 +20,20 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
+	"log"
 	"net"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/net/http2"
-	"k8s.io/klog"
+	"k8s.io/component-base/cli/flag"
+	"k8s.io/klog/v2"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apiserver/pkg/endpoints/metrics"
 	"k8s.io/apiserver/pkg/server/dynamiccertificates"
 )
 
@@ -56,6 +62,14 @@ func (s *SecureServingInfo) tlsConfig(stopCh <-chan struct{}) (*tls.Config, erro
 	}
 	if len(s.CipherSuites) > 0 {
 		tlsConfig.CipherSuites = s.CipherSuites
+		insecureCiphers := flag.InsecureTLSCiphers()
+		for i := 0; i < len(s.CipherSuites); i++ {
+			for cipherName, cipherID := range insecureCiphers {
+				if s.CipherSuites[i] == cipherID {
+					klog.Warningf("Use of insecure cipher '%s' detected.", cipherName)
+				}
+			}
+		}
 	}
 
 	if s.ClientCA != nil {
@@ -66,7 +80,7 @@ func (s *SecureServingInfo) tlsConfig(stopCh <-chan struct{}) (*tls.Config, erro
 
 	if s.ClientCA != nil || s.Cert != nil || len(s.SNICerts) > 0 {
 		dynamicCertificateController := dynamiccertificates.NewDynamicServingCertificateController(
-			*tlsConfig,
+			tlsConfig,
 			s.ClientCA,
 			s.Cert,
 			s.SNICerts,
@@ -145,6 +159,9 @@ func (s *SecureServingInfo) Serve(handler http.Handler, shutdownTimeout time.Dur
 		Handler:        handler,
 		MaxHeaderBytes: 1 << 20,
 		TLSConfig:      tlsConfig,
+
+		IdleTimeout:       90 * time.Second, // matches http.DefaultTransport keep-alive timeout
+		ReadHeaderTimeout: 32 * time.Second, // just shy of requestTimeoutUpperBound
 	}
 
 	// At least 99% of serialized resources in surveyed clusters were smaller than 256kb.
@@ -152,7 +169,9 @@ func (s *SecureServingInfo) Serve(handler http.Handler, shutdownTimeout time.Dur
 	// and small enough to allow a per connection buffer of this size multiplied by `MaxConcurrentStreams`.
 	const resourceBody99Percentile = 256 * 1024
 
-	http2Options := &http2.Server{}
+	http2Options := &http2.Server{
+		IdleTimeout: 90 * time.Second, // matches http.DefaultTransport keep-alive timeout
+	}
 
 	// shrink the per-stream buffer and max framesize from the 1MB default while still accommodating most API POST requests in a single frame
 	http2Options.MaxUploadBufferPerStream = resourceBody99Percentile
@@ -174,6 +193,11 @@ func (s *SecureServingInfo) Serve(handler http.Handler, shutdownTimeout time.Dur
 			return nil, fmt.Errorf("error configuring http2: %v", err)
 		}
 	}
+
+	// use tlsHandshakeErrorWriter to handle messages of tls handshake error
+	tlsErrorWriter := &tlsHandshakeErrorWriter{os.Stderr}
+	tlsErrorLogger := log.New(tlsErrorWriter, "", 0)
+	secureServer.ErrorLog = tlsErrorLogger
 
 	klog.Infof("Serving securely on %s", secureServer.Addr)
 	return RunServer(secureServer, s.Listener, shutdownTimeout, stopCh)
@@ -209,7 +233,7 @@ func RunServer(
 		defer utilruntime.HandleCrash()
 
 		var listener net.Listener
-		listener = tcpKeepAliveListener{ln.(*net.TCPListener)}
+		listener = tcpKeepAliveListener{ln}
 		if server.TLSConfig != nil {
 			listener = tls.NewListener(listener, server.TLSConfig)
 		}
@@ -235,15 +259,36 @@ func RunServer(
 //
 // Copied from Go 1.7.2 net/http/server.go
 type tcpKeepAliveListener struct {
-	*net.TCPListener
+	net.Listener
 }
 
 func (ln tcpKeepAliveListener) Accept() (net.Conn, error) {
-	tc, err := ln.AcceptTCP()
+	c, err := ln.Listener.Accept()
 	if err != nil {
 		return nil, err
 	}
-	tc.SetKeepAlive(true)
-	tc.SetKeepAlivePeriod(defaultKeepAlivePeriod)
-	return tc, nil
+	if tc, ok := c.(*net.TCPConn); ok {
+		tc.SetKeepAlive(true)
+		tc.SetKeepAlivePeriod(defaultKeepAlivePeriod)
+	}
+	return c, nil
+}
+
+// tlsHandshakeErrorWriter writes TLS handshake errors to klog with
+// trace level - V(5), to avoid flooding of tls handshake errors.
+type tlsHandshakeErrorWriter struct {
+	out io.Writer
+}
+
+const tlsHandshakeErrorPrefix = "http: TLS handshake error"
+
+func (w *tlsHandshakeErrorWriter) Write(p []byte) (int, error) {
+	if strings.Contains(string(p), tlsHandshakeErrorPrefix) {
+		klog.V(5).Info(string(p))
+		metrics.TLSHandshakeErrors.Inc()
+		return len(p), nil
+	}
+
+	// for non tls handshake error, log it as usual
+	return w.out.Write(p)
 }
