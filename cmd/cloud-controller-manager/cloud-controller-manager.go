@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"k8s.io/component-base/logs"
-	"k8s.io/kubernetes/cmd/cloud-controller-manager/app"
+	"k8s.io/cloud-provider/app"
 
 	_ "opentelekomcloud/cloud-provider-opentelekomcloud/pkg/cloudprovider/opentelekomcloud"
 )

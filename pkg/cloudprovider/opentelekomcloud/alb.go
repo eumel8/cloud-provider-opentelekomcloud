@@ -66,7 +66,7 @@ type tempALBServicePort struct {
  */
 func (alb *ALBCloud) GetLoadBalancer(ctx context.Context, clusterName string, service *v1.Service) (status *v1.LoadBalancerStatus, exists bool, err error) {
 	status = &v1.LoadBalancerStatus{}
-	albProvider, err := alb.getALBClient(service.Namespace)
+	albProvider, err := alb.getALBClient(ctx, service.Namespace)
 
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -91,7 +91,7 @@ func (alb *ALBCloud) GetLoadBalancer(ctx context.Context, clusterName string, se
 /*
  *    Not implemented
  */
-func (alb *ALBCloud) GetLoadBalancerName(ctx context.Context, clusterName string, service *v1.Service) string {
+func (alb *ALBCloud) GetLoadBalancerName(ctx *context.Context, clusterName string, service *v1.Service) string {
 	return ""
 }
 
@@ -102,7 +102,7 @@ func (alb *ALBCloud) GetLoadBalancerName(ctx context.Context, clusterName string
  */
 func (alb *ALBCloud) EnsureLoadBalancer(ctx context.Context, clusterName string, service *v1.Service, hosts []*v1.Node) (*v1.LoadBalancerStatus, error) {
 	klog.Infof("Begin to ensure loadbalancer configuration of service(%s/%s)", service.Namespace, service.Name)
-	albProvider, err := alb.getALBClient(service.Namespace)
+	albProvider, err := alb.getALBClient(ctx, service.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -110,12 +110,12 @@ func (alb *ALBCloud) EnsureLoadBalancer(ctx context.Context, clusterName string,
 	loadBalancerID := ""
 	//auto create lb if not exist
 	if isNeedAutoCreateLB(service) {
-		loadBalancerID, err = alb.createAlbInstance(service, albProvider)
+		loadBalancerID, err = alb.createAlbInstance(ctx, service, albProvider)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		loadBalancerID, err = alb.checkAlbInstance(service, albProvider)
+		loadBalancerID, err = alb.checkAlbInstance(ctx, service, albProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -126,7 +126,7 @@ func (alb *ALBCloud) EnsureLoadBalancer(ctx context.Context, clusterName string,
 		return nil, err
 	}
 
-	members, err := alb.generateMembers(service, hosts)
+	members, err := alb.generateMembers(ctx, service, hosts)
 	if err != nil {
 		return nil, err
 	}
@@ -135,15 +135,15 @@ func (alb *ALBCloud) EnsureLoadBalancer(ctx context.Context, clusterName string,
 	ch := make(chan error, 3)
 
 	go func() {
-		ch <- alb.createLoadBalancer(albProvider, loadBalancerID, service, needsCreate, members)
+		ch <- alb.createLoadBalancer(albProvider, ctx, loadBalancerID, service, needsCreate, members)
 	}()
 
 	go func() {
-		ch <- alb.updateLoadBalancer(albProvider, service, needsUpdate, members)
+		ch <- alb.updateLoadBalancer(albProvider, ctx, service, needsUpdate, members)
 	}()
 
 	go func() {
-		ch <- alb.deleteLoadBalancer(albProvider, service, needsDelete)
+		ch <- alb.deleteLoadBalancer(albProvider, ctx, service, needsDelete)
 	}()
 
 	var errs []error
@@ -173,12 +173,12 @@ func (alb *ALBCloud) EnsureLoadBalancer(ctx context.Context, clusterName string,
 //        (4) compare the equality of two member sets, if not equal, update the pool members
 func (alb *ALBCloud) UpdateLoadBalancer(ctx context.Context, clusterName string, service *v1.Service, nodes []*v1.Node) error {
 	klog.Infof("Begin to update loadbalancer configuration of service(%s/%s)", service.Namespace, service.Name)
-	albProvider, err := alb.getALBClient(service.Namespace)
+	albProvider, err := alb.getALBClient(ctx, service.Namespace)
 	if err != nil {
 		return err
 	}
 
-	members, err := alb.generateMembers(service, nodes)
+	members, err := alb.generateMembers(ctx, service, nodes)
 	if err != nil {
 		return err
 	}
@@ -254,7 +254,7 @@ func (alb *ALBCloud) UpdateLoadBalancer(ctx context.Context, clusterName string,
 
 		var curPort int32
 		for _, port := range service.Spec.Ports {
-			protocolPort, err := alb.getMemberProtocolPort(service, port)
+			protocolPort, err := alb.getMemberProtocolPort(ctx, service, port)
 			if err != nil {
 				errs = append(errs, err)
 				msg := fmt.Sprintf("Failed to get service(%s) ports, error: %v", service.Name, err)
@@ -320,7 +320,7 @@ func (alb *ALBCloud) UpdateLoadBalancer(ctx context.Context, clusterName string,
 //        (5) delete the pool & listener
 func (alb *ALBCloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName string, service *v1.Service) error {
 	klog.Infof("Begin to delete loadbalancer configuration of service(%s/%s)", service.Namespace, service.Name)
-	albProvider, err := alb.getALBClient(service.Namespace)
+	albProvider, err := alb.getALBClient(ctx, service.Namespace)
 	if err != nil {
 		return err
 	}
@@ -407,7 +407,7 @@ func (alb *ALBCloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName 
 				serviceCopy.Annotations[k] = v
 			}
 		}
-		serviceCopy, err = alb.updateService(serviceCopy)
+		serviceCopy, err = alb.updateService(ctx, serviceCopy)
 		if err != nil {
 			klog.Errorf("Update service failed: %v", err)
 			return utilerrors.NewAggregate(errs)
@@ -455,8 +455,8 @@ func (alb *ALBCloud) deleteListener(albProvider *ALBClient, listenerID, poolID, 
  *               Util function
  *    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
  */
-func (alb *ALBCloud) getALBClient(namespace string) (*ALBClient, error) {
-	secret, err := alb.getSecret(namespace, alb.config.SecretName)
+func (alb *ALBCloud) getALBClient(ctx context.Context, namespace string) (*ALBClient, error) {
+	secret, err := alb.getSecret(ctx, namespace, alb.config.SecretName)
 	if err != nil {
 		return nil, err
 	}
@@ -491,7 +491,7 @@ func (alb *ALBCloud) getALBClient(namespace string) (*ALBClient, error) {
 	), nil
 }
 
-func (alb *ALBCloud) getSecret(namespace, secretName string) (*Secret, error) {
+func (alb *ALBCloud) getSecret(ctx context.Context, namespace, secretName string) (*Secret, error) {
 	var kubeSecret *v1.Secret
 
 	key := namespace + "/" + secretName
@@ -499,7 +499,7 @@ func (alb *ALBCloud) getSecret(namespace, secretName string) (*Secret, error) {
 	if ok {
 		kubeSecret = obj.(*v1.Secret)
 	} else {
-		secret, err := alb.kubeClient.Secrets(namespace).Get(secretName, metav1.GetOptions{})
+		secret, err := alb.kubeClient.Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -525,8 +525,8 @@ func (alb *ALBCloud) getSecret(namespace, secretName string) (*Secret, error) {
 	return &secret, nil
 }
 
-func (alb *ALBCloud) getPods(name, namespace string) (*v1.PodList, error) {
-	service, err := alb.kubeClient.Services(namespace).Get(name, metav1.GetOptions{})
+func (alb *ALBCloud) getPods(ctx context.Context, name, namespace string) (*v1.PodList, error) {
+	service, err := alb.kubeClient.Services(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -539,11 +539,11 @@ func (alb *ALBCloud) getPods(name, namespace string) (*v1.PodList, error) {
 	set = service.Spec.Selector
 	labelSelector := set.AsSelector()
 	opts := metav1.ListOptions{LabelSelector: labelSelector.String()}
-	return alb.kubeClient.Pods(namespace).List(opts)
+	return alb.kubeClient.Pods(namespace).List(ctx, opts)
 }
 
-func (alb *ALBCloud) ensureCreateLoadbalancer(albProvider *ALBClient, elbAC ElbAutoCreate, service *v1.Service) (*ALB, error) {
-	neutronSubnetId, err := alb.getClusterNeutronSubnetId(service.Namespace, alb.config.SubnetId)
+func (alb *ALBCloud) ensureCreateLoadbalancer(albProvider *ALBClient, ctx context.Context, elbAC ElbAutoCreate, service *v1.Service) (*ALB, error) {
+	neutronSubnetId, err := alb.getClusterNeutronSubnetId(ctx, service.Namespace, alb.config.SubnetId)
 	if err != nil {
 		return nil, err
 	}
@@ -786,7 +786,7 @@ func (alb *ALBCloud) generateServiceLBConfig(service *v1.Service) (*ServiceLBCon
 	return sc, nil
 }
 
-func (alb *ALBCloud) createAlbInstance(service *v1.Service, albProvider *ALBClient) (string, error) {
+func (alb *ALBCloud) createAlbInstance(ctx context.Context, service *v1.Service, albProvider *ALBClient) (string, error) {
 	serviceCopy := service.DeepCopy()
 	var elbAutoCreate ElbAutoCreate
 	err := json.Unmarshal([]byte(serviceCopy.Annotations[ELBAutoCreateAnnotation]), &elbAutoCreate)
@@ -796,7 +796,7 @@ func (alb *ALBCloud) createAlbInstance(service *v1.Service, albProvider *ALBClie
 		return "", err
 	}
 
-	albInstanceInfo, err := alb.ensureCreateLoadbalancer(albProvider, elbAutoCreate, serviceCopy)
+	albInstanceInfo, err := alb.ensureCreateLoadbalancer(albProvider, ctx, elbAutoCreate, serviceCopy)
 	if err != nil {
 		msg := fmt.Sprintf("Create Loadbalancer error: %v", err)
 		sendEvent(alb.eventRecorder, "CreateLoadBalancerFailed", msg, serviceCopy)
@@ -843,7 +843,7 @@ func (alb *ALBCloud) createAlbInstance(service *v1.Service, albProvider *ALBClie
 		serviceCopy.Spec.LoadBalancerIP = eip.Publicip.PublicIpAddress
 	}
 
-	serviceCopy, err = alb.updateService(serviceCopy)
+	serviceCopy, err = alb.updateService(ctx, serviceCopy)
 	if err != nil {
 		klog.Errorf("Update service failed: %v", err)
 		alb.deleteElb(albProvider, albInstanceInfo.Id, serviceCopy)
@@ -857,11 +857,11 @@ func (alb *ALBCloud) createAlbInstance(service *v1.Service, albProvider *ALBClie
 	return albInstanceInfo.Id, nil
 }
 
-func (alb *ALBCloud) checkAlbInstance(service *v1.Service, albProvider *ALBClient) (string, error) {
+func (alb *ALBCloud) checkAlbInstance(ctx context.Context, service *v1.Service, albProvider *ALBClient) (string, error) {
 	loadBalancerId := service.Annotations[ELBIDAnnotation]
 	serviceCopy := service.DeepCopy()
 	if service.Spec.LoadBalancerIP == "" || loadBalancerId == "" {
-		lb, _, err := alb.getAlbInstanceInfo(service, albProvider, false)
+		lb, _, err := alb.getAlbInstanceInfo(ctx, service, albProvider, false)
 		if err != nil {
 			return "", err
 		}
@@ -878,7 +878,7 @@ func (alb *ALBCloud) checkAlbInstance(service *v1.Service, albProvider *ALBClien
 			serviceCopy.Spec.LoadBalancerIP = eip
 		}
 
-		serviceCopy, err = alb.updateService(serviceCopy)
+		serviceCopy, err = alb.updateService(ctx, serviceCopy)
 		if err != nil {
 			klog.Errorf("Update service failed: %v", err)
 			return "", err
@@ -889,7 +889,7 @@ func (alb *ALBCloud) checkAlbInstance(service *v1.Service, albProvider *ALBClien
 	return loadBalancerId, nil
 }
 
-func (alb *ALBCloud) getAlbInstanceInfo(service *v1.Service, albProvider *ALBClient, onlyGetLoadBalanceID bool) (*ALB, string, error) {
+func (alb *ALBCloud) getAlbInstanceInfo(ctx context.Context, service *v1.Service, albProvider *ALBClient, onlyGetLoadBalanceID bool) (*ALB, string, error) {
 	var albInstanceInfo *ALB
 	var err error
 	loadBalancerId := service.Annotations[ELBIDAnnotation]
@@ -902,13 +902,13 @@ func (alb *ALBCloud) getAlbInstanceInfo(service *v1.Service, albProvider *ALBCli
 			return nil, "", err
 		}
 	} else {
-		vipAddress, err := alb.getPrivateIpFromLoadbalancerIp(service.Namespace, service.Spec.LoadBalancerIP)
+		vipAddress, err := alb.getPrivateIpFromLoadbalancerIp(ctx, service.Namespace, service.Spec.LoadBalancerIP)
 		if err != nil {
 			return nil, "", err
 		}
 
 		params := map[string]string{"vip_address": vipAddress}
-		neutronSubnetId, err := alb.getElbNeutronSubnetIdFromElbIp(vipAddress, service.Namespace)
+		neutronSubnetId, err := alb.getElbNeutronSubnetIdFromElbIp(ctx, vipAddress, service.Namespace)
 		if err != nil {
 			return nil, "", err
 		}
@@ -974,8 +974,8 @@ func (alb *ALBCloud) compare(
 	return needsCreate, needsUpdate, needsDelete
 }
 
-func (alb *ALBCloud) generateMembers(service *v1.Service, nodes []*v1.Node) ([]*ALBMember, error) {
-	podList, err := alb.getPods(service.Name, service.Namespace)
+func (alb *ALBCloud) generateMembers(ctx context.Context, service *v1.Service, nodes []*v1.Node) ([]*ALBMember, error) {
+	podList, err := alb.getPods(ctx, service.Name, service.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -1012,7 +1012,7 @@ func (alb *ALBCloud) generateMembers(service *v1.Service, nodes []*v1.Node) ([]*
 			subnetId = alb.config.SubnetId
 		}
 
-		neutronSubnetId, err := alb.getClusterNeutronSubnetId(service.Namespace, subnetId)
+		neutronSubnetId, err := alb.getClusterNeutronSubnetId(ctx, service.Namespace, subnetId)
 		if err != nil {
 			return nil, err
 		}
@@ -1036,6 +1036,7 @@ func (alb *ALBCloud) generateMembers(service *v1.Service, nodes []*v1.Node) ([]*
 
 func (alb *ALBCloud) createLoadBalancer(
 	albProvider *ALBClient,
+	ctx context.Context,
 	loadBalancerID string,
 	service *v1.Service,
 	needsCreate []v1.ServicePort,
@@ -1131,7 +1132,7 @@ func (alb *ALBCloud) createLoadBalancer(
 		}
 
 		// Step 4. add backend hosts
-		protocolPort, err := alb.getMemberProtocolPort(service, port)
+		protocolPort, err := alb.getMemberProtocolPort(ctx, service, port)
 		if err != nil {
 			errs = append(errs, err)
 			msg := fmt.Sprintf("Failed to get service(%s) ports, error: %v", service.Name, err)
@@ -1168,6 +1169,7 @@ func (alb *ALBCloud) createLoadBalancer(
 
 func (alb *ALBCloud) deleteLoadBalancer(
 	albProvider *ALBClient,
+	ctx context.Context,
 	service *v1.Service,
 	needsDelete []ALBListener) error {
 	if len(needsDelete) == 0 {
@@ -1197,6 +1199,7 @@ func (alb *ALBCloud) deleteLoadBalancer(
 
 func (alb *ALBCloud) updateLoadBalancer(
 	albProvider *ALBClient,
+	ctx context.Context,
 	service *v1.Service,
 	needsUpdate map[string]tempALBServicePort,
 	members []*ALBMember) error {
@@ -1440,7 +1443,7 @@ func (alb *ALBCloud) updateLoadBalancer(
 		}
 
 		//Step 4: update members
-		protocolPort, err := alb.getMemberProtocolPort(service, *tempPort.servicePort)
+		protocolPort, err := alb.getMemberProtocolPort(ctx, service, *tempPort.servicePort)
 		if err != nil {
 			errs = append(errs, err)
 			msg := fmt.Sprintf("Failed to get service(%s) ports, error: %v", service.Name, err)
@@ -1508,12 +1511,12 @@ func (alb *ALBCloud) deleteEip(albProvider *ALBClient, id string, service *v1.Se
 }
 
 //if error, then return origin service
-func (alb *ALBCloud) updateService(service *v1.Service) (*v1.Service, error) {
+func (alb *ALBCloud) updateService(ctx context.Context, service *v1.Service) (*v1.Service, error) {
 	var err error
 	serviceCopy := service.DeepCopy()
 	for i := 0; i < MaxRetry; i++ {
 		toUpdate := service.DeepCopy()
-		toUpdate, err = alb.kubeClient.Services(toUpdate.Namespace).Update(toUpdate)
+		toUpdate, err = alb.kubeClient.Services(toUpdate.Namespace).Update(ctx, toUpdate)
 		if err == nil {
 			return toUpdate, nil
 		}
@@ -1525,7 +1528,7 @@ func (alb *ALBCloud) updateService(service *v1.Service) (*v1.Service, error) {
 		}
 
 		if apierrors.IsConflict(err) {
-			service, err = alb.kubeClient.Services(service.Namespace).Get(service.Name, metav1.GetOptions{})
+			service, err = alb.kubeClient.Services(ctx, service.Namespace).Get(service.Name, metav1.GetOptions{})
 			if err != nil {
 				service = serviceCopy
 				klog.Warningf("Get service(%s/%s) error: %v", service.Namespace, service.Name, err)
@@ -1540,12 +1543,12 @@ func (alb *ALBCloud) updateService(service *v1.Service) (*v1.Service, error) {
 	return serviceCopy, err
 }
 
-func (alb *ALBCloud) getClusterNeutronSubnetId(ns, subnetId string) (string, error) {
+func (alb *ALBCloud) getClusterNeutronSubnetId(ctx context.Context, ns, subnetId string) (string, error) {
 	if neutronSubnetId, ok := alb.subnetMap[subnetId]; ok {
 		return neutronSubnetId, nil
 	}
 
-	albProvider, err := alb.getALBClient(ns)
+	albProvider, err := alb.getALBClient(ctx,ns)
 	if err != nil {
 		return "", err
 	}
@@ -1564,8 +1567,8 @@ func (alb *ALBCloud) getClusterNeutronSubnetId(ns, subnetId string) (string, err
 	return "", fmt.Errorf("get cluster's neutron_subnet_id failed")
 }
 
-func (alb *ALBCloud) getElbNeutronSubnetIdFromElbIp(elbIp string, ns string) (string, error) {
-	albProvider, err := alb.getALBClient(ns)
+func (alb *ALBCloud) getElbNeutronSubnetIdFromElbIp(ctx context.Context, elbIp string, ns string) (string, error) {
+	albProvider, err := alb.getALBClient(ctx, ns)
 	if err != nil {
 		return "", err
 	}
@@ -1592,13 +1595,13 @@ func (alb *ALBCloud) getElbNeutronSubnetIdFromElbIp(elbIp string, ns string) (st
 
 }
 
-func (alb *ALBCloud) getPrivateIpFromLoadbalancerIp(ns, ipStr string) (string, error) {
+func (alb *ALBCloud) getPrivateIpFromLoadbalancerIp(ctx context.Context, ns, ipStr string) (string, error) {
 	ip := net.ParseIP(ipStr)
 	if ip == nil {
 		return "", fmt.Errorf("service loadbalancer IP is invalid")
 	}
 
-	albProvider, err := alb.getALBClient(ns)
+	albProvider, err := alb.getALBClient(ctx, ns)
 	if err != nil {
 		return "", err
 	}
@@ -1617,8 +1620,8 @@ func (alb *ALBCloud) getPrivateIpFromLoadbalancerIp(ns, ipStr string) (string, e
 	return ipStr, nil
 }
 
-func (alb *ALBCloud) getPublicIpFromPrivateIp(ns, portID string) (string, error) {
-	albProvider, err := alb.getALBClient(ns)
+func (alb *ALBCloud) getPublicIpFromPrivateIp(ctx context.Context, ns, portID string) (string, error) {
+	albProvider, err := alb.getALBClient(ctx, ns)
 	if err != nil {
 		return "", err
 	}
@@ -1779,13 +1782,13 @@ func (alb *ALBCloud) getLBHealthMonitor(service *v1.Service) (*LBHealthMonitorCo
 // If kubernetes.io/hws-hostNetwork = "true" and backend pod in mode localNetwork true ,
 // we will add targetPort to listener , so that ELB can access to container direct
 // Otherwise add nodeport to listener
-func (alb *ALBCloud) getMemberProtocolPort(service *v1.Service, servicePort v1.ServicePort) (listenerPort int32, err error) {
+func (alb *ALBCloud) getMemberProtocolPort(ctx context.Context, service *v1.Service, servicePort v1.ServicePort) (listenerPort int32, err error) {
 	listenerPort = servicePort.NodePort
 	if !isHostNetworkService(service) {
 		return listenerPort, nil
 	}
 
-	podList, err := alb.getPods(service.Name, service.Namespace)
+	podList, err := alb.getPods(ctx, service.Name, service.Namespace)
 	if err != nil {
 		return listenerPort, err
 	}
