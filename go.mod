@@ -3,7 +3,6 @@ module opentelekomcloud/cloud-provider-opentelekomcloud
 go 1.17
 
 require (
-	github.com/RainbowMango/huaweicloud-sdk-go v0.0.0
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/hashicorp/golang-lru v0.5.1
 	github.com/mitchellh/mapstructure v1.1.2
@@ -16,10 +15,10 @@ require (
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.9.0
 	k8s.io/kubernetes v1.21.9
+	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 )
 
 replace (
-	github.com/RainbowMango/huaweicloud-sdk-go => github.com/RainbowMango/huaweicloud-sdk-go v1.0.21-0.20200208034621-214008016257
 	github.com/opentelekomcloud/gophertelekomcloud => github.com/opentelekomcloud/gophertelekomcloud v0.5.6
 	k8s.io/api => k8s.io/api v0.21.9
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.21.9
