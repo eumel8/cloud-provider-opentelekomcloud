@@ -10,20 +10,10 @@ github.com/PuerkitoBio/urlesc
 # github.com/RainbowMango/huaweicloud-sdk-go v0.0.0 => github.com/RainbowMango/huaweicloud-sdk-go v1.0.21-0.20200208034621-214008016257
 ## explicit
 github.com/RainbowMango/huaweicloud-sdk-go
-github.com/RainbowMango/huaweicloud-sdk-go/auth
 github.com/RainbowMango/huaweicloud-sdk-go/auth/aksk
-github.com/RainbowMango/huaweicloud-sdk-go/auth/token
-github.com/RainbowMango/huaweicloud-sdk-go/internal
-github.com/RainbowMango/huaweicloud-sdk-go/openstack
 github.com/RainbowMango/huaweicloud-sdk-go/openstack/compute/v2/flavors
 github.com/RainbowMango/huaweicloud-sdk-go/openstack/compute/v2/images
 github.com/RainbowMango/huaweicloud-sdk-go/openstack/compute/v2/servers
-github.com/RainbowMango/huaweicloud-sdk-go/openstack/identity/v2/tenants
-github.com/RainbowMango/huaweicloud-sdk-go/openstack/identity/v2/tokens
-github.com/RainbowMango/huaweicloud-sdk-go/openstack/identity/v3/endpoints
-github.com/RainbowMango/huaweicloud-sdk-go/openstack/identity/v3/services
-github.com/RainbowMango/huaweicloud-sdk-go/openstack/identity/v3/tokens
-github.com/RainbowMango/huaweicloud-sdk-go/openstack/utils
 github.com/RainbowMango/huaweicloud-sdk-go/pagination
 github.com/RainbowMango/huaweicloud-sdk-go/testhelper
 github.com/RainbowMango/huaweicloud-sdk-go/testhelper/client
@@ -117,6 +107,19 @@ github.com/modern-go/concurrent
 github.com/modern-go/reflect2
 # github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 github.com/munnerz/goautoneg
+# github.com/opentelekomcloud/gophertelekomcloud v0.5.6 => github.com/opentelekomcloud/gophertelekomcloud v0.5.6
+## explicit
+github.com/opentelekomcloud/gophertelekomcloud
+github.com/opentelekomcloud/gophertelekomcloud/openstack
+github.com/opentelekomcloud/gophertelekomcloud/openstack/compute/v2/flavors
+github.com/opentelekomcloud/gophertelekomcloud/openstack/compute/v2/images
+github.com/opentelekomcloud/gophertelekomcloud/openstack/compute/v2/servers
+github.com/opentelekomcloud/gophertelekomcloud/openstack/identity/v3/catalog
+github.com/opentelekomcloud/gophertelekomcloud/openstack/identity/v3/domains
+github.com/opentelekomcloud/gophertelekomcloud/openstack/identity/v3/projects
+github.com/opentelekomcloud/gophertelekomcloud/openstack/identity/v3/tokens
+github.com/opentelekomcloud/gophertelekomcloud/openstack/utils
+github.com/opentelekomcloud/gophertelekomcloud/pagination
 # github.com/pkg/errors v0.9.1
 github.com/pkg/errors
 # github.com/prometheus/client_golang v1.7.1
@@ -832,6 +835,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.2.0
 sigs.k8s.io/yaml
 # github.com/RainbowMango/huaweicloud-sdk-go => github.com/RainbowMango/huaweicloud-sdk-go v1.0.21-0.20200208034621-214008016257
+# github.com/opentelekomcloud/gophertelekomcloud => github.com/opentelekomcloud/gophertelekomcloud v0.5.6
 # k8s.io/api => k8s.io/api v0.21.9
 # k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.21.9
 # k8s.io/apimachinery => k8s.io/apimachinery v0.21.9

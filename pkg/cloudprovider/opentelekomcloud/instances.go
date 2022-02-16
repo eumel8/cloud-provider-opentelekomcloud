@@ -21,14 +21,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
-	gophercloud "github.com/RainbowMango/huaweicloud-sdk-go"
-	"github.com/RainbowMango/huaweicloud-sdk-go/auth/aksk"
-	"github.com/RainbowMango/huaweicloud-sdk-go/openstack"
-	"github.com/RainbowMango/huaweicloud-sdk-go/openstack/compute/v2/servers"
-	"github.com/RainbowMango/huaweicloud-sdk-go/pagination"
+	gophercloud "github.com/opentelekomcloud/gophertelekomcloud"
+	"github.com/opentelekomcloud/gophertelekomcloud/openstack"
+        "github.com/opentelekomcloud/gophertelekomcloud/openstack/compute/v2/servers"
+	"github.com/opentelekomcloud/gophertelekomcloud/pagination"
+	// gophercloud "github.com/RainbowMango/huaweicloud-sdk-go"
+	// "github.com/RainbowMango/huaweicloud-sdk-go/auth/aksk"
+	// "github.com/RainbowMango/huaweicloud-sdk-go/openstack"
+	// "github.com/RainbowMango/huaweicloud-sdk-go/openstack/compute/v2/servers"
+	// "github.com/RainbowMango/huaweicloud-sdk-go/pagination"
 	"github.com/mitchellh/mapstructure"
 
 	v1 "k8s.io/api/core/v1"
@@ -290,6 +295,7 @@ func (a *AuthOpts) getAKSKFromSecret() (accessKey string, secretKey string, secr
 }
 
 func (a *AuthOpts) getServerClient() (*gophercloud.ServiceClient, error) {
+	/*
 	accessKey := a.AccessKey
 	secretKey := a.SecretKey
 	secretToken := ""
@@ -309,6 +315,28 @@ func (a *AuthOpts) getServerClient() (*gophercloud.ServiceClient, error) {
 	}
 
 	providerClient, err := openstack.AuthenticatedClient(akskOpts)
+	*/
+
+	// required env vars: OS_PROJECT_NAME, OS_REGION_NAME, OS_AUTH_URL, OS_IDENTITY_API_VERSION, OS_USER_DOMAIN_NAME, OS_USERNAME, OS_PASSWORD
+        if os.Getenv("OS_AUTH_URL") == "" {
+                os.Setenv("OS_AUTH_URL", "https://iam.eu-de.otc.t-systems.com:443/v3")
+        }
+
+        if os.Getenv("OS_IDENTITY_API_VERSION") == "" {
+                os.Setenv("OS_IDENTITY_API_VERSION", "3")
+        }
+
+        if os.Getenv("OS_REGION_NAME") == "" {
+                os.Setenv("OS_REGION_NAME", "eu-de")
+        }
+
+        if os.Getenv("OS_PROJECT_NAME") == "" {
+                os.Setenv("OS_PROJECT_NAME", "eu-de")
+        }
+
+        opts, err := openstack.AuthOptionsFromEnv()
+
+	providerClient, err := openstack.AuthenticatedClient(opts)
 	if err != nil {
 		klog.Errorf("init provider client failed with error: %v", err)
 		return nil, err
