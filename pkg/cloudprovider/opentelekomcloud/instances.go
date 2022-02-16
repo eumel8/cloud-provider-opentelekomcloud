@@ -296,7 +296,6 @@ func (a *AuthOpts) getAKSKFromSecret() (accessKey string, secretKey string, secr
 }
 
 func (a *AuthOpts) getServerClient() (*gophercloud.ServiceClient, error) {
-	/*
 	accessKey := a.AccessKey
 	secretKey := a.SecretKey
 	secretToken := ""
@@ -316,9 +315,9 @@ func (a *AuthOpts) getServerClient() (*gophercloud.ServiceClient, error) {
 	}
 
 	providerClient, err := openstack.AuthenticatedClient(akskOpts)
-	*/
 
 	// required env vars: OS_PROJECT_NAME, OS_REGION_NAME, OS_AUTH_URL, OS_IDENTITY_API_VERSION, OS_USER_DOMAIN_NAME, OS_USERNAME, OS_PASSWORD
+	/*
         if os.Getenv("OS_AUTH_URL") == "" {
                 os.Setenv("OS_AUTH_URL", "https://iam.eu-de.otc.t-systems.com:443/v3")
         }
@@ -338,6 +337,7 @@ func (a *AuthOpts) getServerClient() (*gophercloud.ServiceClient, error) {
         opts, err := openstack.AuthOptionsFromEnv()
 
 	providerClient, err := openstack.AuthenticatedClient(opts)
+	*/
 	if err != nil {
 		klog.Errorf("init provider client failed with error: %v", err)
 		return nil, err
