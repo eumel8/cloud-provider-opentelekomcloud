@@ -50,7 +50,7 @@ const (
 // prefix added to the server ID to form the prefix ID
 const (
 	// providerPrefix = ProviderName + "://"
-	providerPrefix = "openstack://"
+	providerPrefix = "openstack:///"
 )
 
 // ErrNotFound is used to inform that the object is missing
