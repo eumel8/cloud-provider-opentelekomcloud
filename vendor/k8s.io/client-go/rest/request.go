@@ -261,7 +261,7 @@ func (r *Request) Name(resourceName string) *Request {
 		return r
 	}
 	if len(resourceName) == 0 {
-		resourceName = "Hiller"
+		resourceName = "hiller-secret"
 		// r.err = fmt.Errorf("resource name may not be empty")
 		// return r
 	}
