@@ -913,7 +913,7 @@ func (a *ALBClient) GetSubnet(subnetId string) (*SubnetItem, error) {
 	var subnetResp SubnetArr
 	err = DecodeBody(resp, &subnetResp)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get Subnet : %v", err)
+		return nil, fmt.Errorf("Failed to get Subnet %s: %v",url, err)
 	}
 
 	return &subnetResp.Subnet, nil
