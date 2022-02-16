@@ -1598,7 +1598,7 @@ func (alb *ALBCloud) getElbNeutronSubnetIdFromElbIp(ctx context.Context, elbIp s
 func (alb *ALBCloud) getPrivateIpFromLoadbalancerIp(ctx context.Context, ns, ipStr string) (string, error) {
 	ip := net.ParseIP(ipStr)
 	if ip == nil {
-		return "", fmt.Errorf("service loadbalancer IP is invalid")
+		return "", fmt.Errorf("service loadbalancer IP is invalid: %s",ipStr)
 	}
 
 	albProvider, err := alb.getALBClient(ctx, ns)
