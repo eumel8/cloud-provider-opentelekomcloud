@@ -893,6 +893,7 @@ func (alb *ALBCloud) getAlbInstanceInfo(ctx context.Context, service *v1.Service
 	var albInstanceInfo *ALB
 	var err error
 	loadBalancerId := service.Annotations[ELBIDAnnotation]
+	fmt.Errorf("calling hiller with: %s",service.Spec)
 	if loadBalancerId != "" {
 		if onlyGetLoadBalanceID {
 			return nil, loadBalancerId, nil
@@ -902,7 +903,6 @@ func (alb *ALBCloud) getAlbInstanceInfo(ctx context.Context, service *v1.Service
 			return nil, "", err
 		}
 	} else {
-		fmt.Errorf("calling hiller with: %s",service.Spec)
 		vipAddress, err := alb.getPrivateIpFromLoadbalancerIp(ctx, service.Namespace, service.Spec.LoadBalancerIP)
 		if err != nil {
 			return nil, "", err
