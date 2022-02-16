@@ -46,7 +46,7 @@ import (
 
 // Cloud provider name: PaaS Web Services.
 const (
-	ProviderName               = "opentelekomcloud"
+	ProviderName               = "openstack"
 	ELBIDAnnotation            = "kubernetes.io/elb.id"
 	ELBClassAnnotation         = "kubernetes.io/elb.class"
 	ELBMarkAnnotation          = "kubernetes.io/elb.mark"
