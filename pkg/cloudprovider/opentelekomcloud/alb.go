@@ -1594,6 +1594,7 @@ func (alb *ALBCloud) getElbNeutronSubnetIdFromElbIp(ctx context.Context, elbIp s
 
         providerClient, err := openstack.AuthenticatedClient(opts)
 
+	fmt.Errorf("Subnet calling...")
 	network1, err := openstack.NewNetworkV1(providerClient, gophercloud.EndpointOpts{})
 	subnetList, err := ListSubnets(&subnets.ListOpts{VpcID: alb.config.VPCId}, network1)
 	if err != nil {
