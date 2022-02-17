@@ -344,7 +344,7 @@ func (a *AuthOpts) getServerClient() (*gophercloud.ServiceClient, error) {
         opts, err := openstack.AuthOptionsFromEnv()
 
 	providerClient, err := openstack.AuthenticatedClient(opts)
-	*/
+
 	if err != nil {
 		klog.Errorf("init provider client failed with error: %v", err)
 		return nil, err
