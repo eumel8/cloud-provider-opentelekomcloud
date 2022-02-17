@@ -4,9 +4,10 @@ go 1.17
 
 require (
 	github.com/fsnotify/fsnotify v1.4.9
+	github.com/gophercloud/utils v0.0.0-20210909165623-d7085207ff6d
 	github.com/hashicorp/golang-lru v0.5.1
 	github.com/mitchellh/mapstructure v1.1.2
-	github.com/opentelekomcloud/gophertelekomcloud v0.5.6
+	github.com/opentelekomcloud/gophertelekomcloud v0.5.7
 	k8s.io/api v0.21.9
 	k8s.io/apimachinery v0.21.9
 	k8s.io/client-go v0.21.9
@@ -15,11 +16,11 @@ require (
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.9.0
 	k8s.io/kubernetes v1.21.9
-	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 )
 
 replace (
-	github.com/opentelekomcloud/gophertelekomcloud => github.com/opentelekomcloud/gophertelekomcloud v0.5.6
+	github.com/gophercloud/utils => github.com/gophercloud/utils v0.0.0-20210909165623-d7085207ff6d
+	github.com/opentelekomcloud/gophertelekomcloud => github.com/opentelekomcloud/gophertelekomcloud v0.5.7
 	k8s.io/api => k8s.io/api v0.21.9
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.21.9
 	k8s.io/apimachinery => k8s.io/apimachinery v0.21.9

@@ -37,6 +37,9 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
+	"github.com/opentelekomcloud/gophertelekomcloud/openstack"
+	"github.com/opentelekomcloud/gophertelekomcloud/openstack/networking/v1/subnets"
+	gophercloud "github.com/opentelekomcloud/gophertelekomcloud"
 )
 
 type ALBCloud struct {
@@ -1569,18 +1572,37 @@ func (alb *ALBCloud) getClusterNeutronSubnetId(ctx context.Context, ns, subnetId
 }
 
 func (alb *ALBCloud) getElbNeutronSubnetIdFromElbIp(ctx context.Context, elbIp string, ns string) (string, error) {
-	albProvider, err := alb.getALBClient(ctx, ns)
+	// Test the os env client functionality of gophercloud client
+	// the only adapt function without ServiceClient
+        if os.Getenv("OS_AUTH_URL") == "" {
+                os.Setenv("OS_AUTH_URL", "https://iam.eu-de.otc.t-systems.com:443/v3")
+        }
+
+        if os.Getenv("OS_IDENTITY_API_VERSION") == "" {
+                os.Setenv("OS_IDENTITY_API_VERSION", "3")
+        }
+
+        if os.Getenv("OS_REGION_NAME") == "" {
+                os.Setenv("OS_REGION_NAME", "eu-de")
+        }
+
+        if os.Getenv("OS_PROJECT_NAME") == "" {
+                os.Setenv("OS_PROJECT_NAME", "eu-de")
+        }
+
+        opts, err := openstack.AuthOptionsFromEnv()
+
+        providerClient, err := openstack.AuthenticatedClient(opts)
+
+	network1, err := openstack.NewNetworkV1(providerClient, gophercloud.EndpointOpts{})
+	subnetList, err := ListSubnets(&subnets.ListOpts{VpcID: alb.config.VPCId}, network1)
 	if err != nil {
 		return "", err
 	}
 
-	params := map[string]string{"vpc_id": alb.config.VPCId}
-	subnetList, err := albProvider.ListSubnets(params)
-	if err != nil {
-		return "", err
-	}
-
-	ip := net.ParseIP(elbIp)
+	// ip := net.ParseIP(elbIp)
+	fmt.Errorf("Subnet liist response: %s",subnetList)
+	/*
 	for _, subnet := range subnetList.Subnets {
 		_, cidr, err := net.ParseCIDR(subnet.Cidr)
 		if err != nil {
@@ -1591,7 +1613,7 @@ func (alb *ALBCloud) getElbNeutronSubnetIdFromElbIp(ctx context.Context, elbIp s
 			return subnet.NeutronSubnetId, nil
 		}
 	}
-
+	*/
 	return "", fmt.Errorf("get elb'neutron_subnet_id failed")
 
 }

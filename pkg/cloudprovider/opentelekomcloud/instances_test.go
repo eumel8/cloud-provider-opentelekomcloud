@@ -23,10 +23,10 @@ import (
 	"net/http"
 	"testing"
 
-	gophercloud "github.com/RainbowMango/huaweicloud-sdk-go"
-	"github.com/RainbowMango/huaweicloud-sdk-go/openstack/compute/v2/servers"
-	th "github.com/RainbowMango/huaweicloud-sdk-go/testhelper"
-	"github.com/RainbowMango/huaweicloud-sdk-go/testhelper/client"
+//	gophercloud "github.com/RainbowMango/huaweicloud-sdk-go"
+//	"github.com/RainbowMango/huaweicloud-sdk-go/openstack/compute/v2/servers"
+//	th "github.com/RainbowMango/huaweicloud-sdk-go/testhelper"
+//	"github.com/RainbowMango/huaweicloud-sdk-go/testhelper/client"
 
 	"k8s.io/apimachinery/pkg/types"
 )

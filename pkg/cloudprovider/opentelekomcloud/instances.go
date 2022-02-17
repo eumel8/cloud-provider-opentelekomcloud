@@ -29,11 +29,6 @@ import (
 	"github.com/opentelekomcloud/gophertelekomcloud/openstack"
         "github.com/opentelekomcloud/gophertelekomcloud/openstack/compute/v2/servers"
 	"github.com/opentelekomcloud/gophertelekomcloud/pagination"
-	// gophercloud "github.com/RainbowMango/huaweicloud-sdk-go"
-	// "github.com/RainbowMango/huaweicloud-sdk-go/auth/aksk"
-	// "github.com/RainbowMango/huaweicloud-sdk-go/openstack"
-	// "github.com/RainbowMango/huaweicloud-sdk-go/openstack/compute/v2/servers"
-	// "github.com/RainbowMango/huaweicloud-sdk-go/pagination"
 	"github.com/mitchellh/mapstructure"
 
 	v1 "k8s.io/api/core/v1"

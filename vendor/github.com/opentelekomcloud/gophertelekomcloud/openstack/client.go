@@ -768,10 +768,10 @@ func NewELBV1(client *golangsdk.ProviderClient, eo golangsdk.EndpointOpts) (*gol
 // NewELBV2 creates a ServiceClient that may be used to access the ELBv2 service.
 func NewELBV2(client *golangsdk.ProviderClient, eo golangsdk.EndpointOpts) (*golangsdk.ServiceClient, error) {
 	sc, err := initClientOpts(client, eo, "elb")
-	if suf := "/v1.0/"; strings.HasSuffix(sc.Endpoint, suf) {
+	if suf := "v1.0/"; strings.HasSuffix(sc.Endpoint, suf) {
 		sc.Endpoint = strings.TrimSuffix(sc.Endpoint, suf)
 	}
-	sc.ResourceBase = sc.Endpoint + "/v2.0/"
+	sc.ResourceBase = sc.Endpoint + "v2.0/"
 	return sc, err
 }
 
@@ -793,8 +793,7 @@ func NewRDSV1(client *golangsdk.ProviderClient, eo golangsdk.EndpointOpts) (*gol
 
 // NewKMSV1 creates a ServiceClient that may be used to access the KMS service.
 func NewKMSV1(client *golangsdk.ProviderClient, eo golangsdk.EndpointOpts) (*golangsdk.ServiceClient, error) {
-	sc, err := initClientOpts(client, eo, "kms")
-	return sc, err
+	return initClientOpts(client, eo, "kmsv1")
 }
 
 // NewSMNV2 creates a ServiceClient that may be used to access the SMN service.

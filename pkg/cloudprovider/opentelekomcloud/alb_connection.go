@@ -27,6 +27,11 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog"
+
+//	"github.com/gophercloud/utils/client"
+	gophercloud "github.com/opentelekomcloud/gophertelekomcloud"
+	"github.com/opentelekomcloud/gophertelekomcloud/openstack/networking/v1/subnets"
+	//        "github.com/opentelekomcloud/gophertelekomcloud/openstack/networking/v1/vpcs"
 )
 
 // list type
@@ -913,12 +918,36 @@ func (a *ALBClient) GetSubnet(subnetId string) (*SubnetItem, error) {
 	var subnetResp SubnetArr
 	err = DecodeBody(resp, &subnetResp)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get Subnet %s: %v",url, err)
+		return nil, fmt.Errorf("Failed to get Subnet %s: %v", url, err)
 	}
 
 	return &subnetResp.Subnet, nil
 }
 
+func ListSubnets(params *subnets.ListOpts, client *gophercloud.ServiceClient) (*subnets.Subnet, error) {
+
+	resp, err := subnets.List(client, *params)
+	if err != nil {
+		return nil, err
+	}
+	if len(resp) == 0 {
+		klog.Exitf("no subnet found")
+	}
+
+	// var subnetResp SubnetList
+	// err = DecodeBody(resp, &subnetResp)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("Failed to SubnetList : %v", err)
+	// }
+
+	// return &subnetResp, nil
+	return &resp[0], nil
+}
+
+// s, err := subnetGet(netclient1, &subnets.ListOpts{Name: c.Subnet})
+//	params := map[string]string{"vpc_id": alb.config.VPCId}
+
+/*
 func (a *ALBClient) ListSubnets(params map[string]string) (*SubnetList, error) {
 	var query string
 
@@ -946,6 +975,7 @@ func (a *ALBClient) ListSubnets(params map[string]string) (*SubnetList, error) {
 
 	return &subnetResp, nil
 }
+*/
 
 func generateELBRoutePrefix(enableEnterpriseProject string, projectId string) string {
 	if enableEnterpriseProject == "true" {
